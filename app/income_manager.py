@@ -6,6 +6,9 @@ logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
+SCHED_HOST = "192.168.1.111"
+SCHED_PORT = 8767
+
 
 def connection_handler(thread, connection, addr):
     logging.info(f"Connetion from {addr}")
@@ -15,6 +18,14 @@ def connection_handler(thread, connection, addr):
             if data:
                 logging.info(f"Thread {thread} received data from {addr}: {data} ")
                 connection.send(data)
+
+                client_socket = socket.socket()
+                client_socket.connect((SCHED_HOST, SCHED_PORT))
+
+                message = data
+
+                client_socket.send(message)
+                client_socket.close()
 
     except Exception:
         connection.close()
