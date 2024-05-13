@@ -3,6 +3,7 @@ import threading
 import logging
 import time
 
+
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
 )
@@ -40,9 +41,11 @@ def income_manager_connection_handler(lock, connection, addr):
                 lock.acquire()
                 del inter_thread_message[payload["task_name"]]
                 lock.release()
+                connection.close()
                 break
 
-    except Exception:
+    except Exception as err:
+        logging.error(f"Connetion error {addr} {payload['task_name']}", str(err))
         connection.close()
 
 
