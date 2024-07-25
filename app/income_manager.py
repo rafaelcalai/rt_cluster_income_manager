@@ -30,17 +30,23 @@ def income_manager_connection_handler(lock, connection, addr):
                 client_socket = socket.socket()
                 client_socket.connect((SCHED_HOST, SCHED_PORT))
                 client_socket.send(data)
+                sched_response = client_socket.recv(1024)
                 client_socket.close()
+                
+                logging.info(f"Response from scheduler: {sched_response.decode()}")
+                
+                if "Request Accepted" in sched_response.decode():
+                    while payload["task_name"] not in inter_thread_message:
+                        time.sleep(0.1)
+                    message = str(inter_thread_message[payload["task_name"]])
+                    connection.send(message.encode())
 
-                while payload["task_name"] not in inter_thread_message:
-                    time.sleep(0.1)
-
-                message = str(inter_thread_message[payload["task_name"]])
-                connection.send(message.encode())
-
-                lock.acquire()
-                del inter_thread_message[payload["task_name"]]
-                lock.release()
+                    lock.acquire()
+                    del inter_thread_message[payload["task_name"]]
+                    lock.release()
+                else:
+                    connection.send(sched_response)
+                
                 connection.close()
                 break
 
