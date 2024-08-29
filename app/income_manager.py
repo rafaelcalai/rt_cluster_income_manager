@@ -8,11 +8,12 @@ logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-SCHED_HOST = "192.168.1.111"
+SCHED_HOST = "192.168.1.120"
 HOST = "0.0.0.0"
 INCOME_MANAGER_PORT = 8765
 SCHED_PORT = 8767
 SERVICE_RESPONSE_PORT = 8768
+REMOVE_SERVICE_PORT = 8769
 
 
 inter_thread_message = dict()
@@ -83,7 +84,6 @@ def service_response_server(lock):
 
     server.listen()
     logging.info("Service response socket is listening")
-    thread = 0
 
     while True:
         connection, addr = server.accept()
@@ -95,7 +95,16 @@ def service_response_server(lock):
             lock.acquire()
             inter_thread_message[payload["task_name"]] = payload["task_response"]
             lock.release()
-
+            
+            try:
+                client_socket = socket.socket()
+                client_socket.connect((SCHED_HOST, REMOVE_SERVICE_PORT))
+                client_socket.send(data)
+                client_socket.close()
+            except Exception as err:
+                logging.error(f"Error during request of service removal: {str(err)}")
+                client_socket.close()
+            
     server.close()
 
 
